@@ -1,0 +1,55 @@
+{
+	"$schema": "https://biomejs.dev/schemas/1.8.3/schema.json",
+	"vcs": {
+		"enabled": true,
+		"clientKind": "git",
+		"useIgnoreFile": false
+	},
+	"files": {
+		"ignoreUnknown": false,
+		"ignore": []
+	},
+	"formatter": {
+		"enabled": true,
+		"indentStyle": "tab",
+		"ignore": [
+			"**/node_modules/",
+			"**/.next",
+			"**/dist",
+			"**/*-lock.json",
+			"**/*-lock.yaml",
+			"**/*-lock.yml",
+			"**/*.lock",
+			"**/.env",
+			"**/.env.*",
+			"**/.env-*"
+		]
+	},
+	"organizeImports": {
+		"enabled": true
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"recommended": true
+		},
+		"ignore": [
+			"**/node_modules/*",
+			"**/.next/*",
+			"**/dist/*",
+			"**/*-lock.json",
+			"**/*-lock.yaml",
+			"**/*-lock.yml",
+			"**/*.lock",
+			"**/.env",
+			"**/.env.*",
+			"**/.env-*",
+			"src/components/*ui/*"
+		]
+	},
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "double"
+		}
+	}
+}

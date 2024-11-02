@@ -1,0 +1,71 @@
+# DinD service is required for Testcontainers
+
+default:
+  cache:
+    key:
+      files:
+        - package.json
+        - yarn.lock
+    paths:
+      - node_modules
+    when: on_success
+
+stages:
+  - lint
+  - test
+  - build
+
+lint:
+  stage: lint
+  image: node:20-alpine
+  script:
+    - yarn
+    - yarn lint
+
+format:
+  stage: lint
+  image: node:20-alpine
+  script:
+    - yarn
+    - yarn format:check
+
+test:
+  coverage: /All files(?:[^|]*\|){4}\s*(\S+)/
+  stage: test
+  image: node:20-alpine
+  script:
+    - yarn
+    - yarn test --coverage
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: 'tcp://docker:2375'
+    DOCKER_DRIVER: overlay2
+  needs:
+    - lint
+    - format
+
+build:
+  stage: build
+  image: node:20-alpine
+  script:
+    - yarn
+    - yarn build
+  cache:
+    key:
+      files:
+        - package.json
+        - yarn.lock
+    paths:
+      - node_modules
+      - ./.next/cache
+    when: on_success
+  variables:
+    DATABASE_URL: 'postgres://test:postgres@localhost:5432/test' # This should be set in the environment variables on gitlab of the project
+    JWT_ACCESS_SECRET: 'secret_jwt' # This should be set in the environment variables on gitlab of the project
+    JWT_REFRESH_SECRET: 'secret_refresh' # This should be set in the environment variables on gitlab of the project
+    ACCESS_TOKEN_EXPIRES_MINUTES: 15
+    REFRESH_TOKEN_EXPIRES_DAYS: 7
+    WEBSITE_URL: 'http://localhost:3000'
+  needs:
+    - test

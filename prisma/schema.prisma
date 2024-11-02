@@ -1,0 +1,214 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  // NOTE: When using mysql or sqlserver, uncomment the @db.Text annotations in model Account below
+  // Further reading:
+  // https://next-auth.js.org/adapters/prisma#create-the-prisma-schema
+  // https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#string
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  AUTHOR
+  EDITOR
+  ADMINISTRATOR
+  PLAYER
+}
+
+model RefreshToken {
+  token     String  @id
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  isRevoked Boolean @default(false)
+}
+
+model RateLimit {
+  ip        String
+  key       String
+  count     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  @@id([ip, key])
+}
+
+model User {
+  id            Int            @id @default(autoincrement())
+  username      String         @unique
+  displayName   String
+  email         String         @unique
+  password      String
+  role          Role
+  refreshTokens RefreshToken[]
+  author        Author?        @relation("UserToAuthor")
+  editor        Editor?        @relation("UserToEditor")
+  administrator Administrator? @relation("UserToAdmin")
+  player        Player?        @relation("UserToPlayer")
+}
+
+model Author {
+  id                Int                 @id @default(autoincrement())
+  userId            Int                 @unique
+  user              User                @relation("UserToAuthor", fields: [userId], references: [id], onDelete: Cascade)
+  authorStoryAccess AuthorStoryAccess[]
+}
+
+model PublishingCompany {
+  id          Int          @id @default(autoincrement())
+  name        String
+  editors     Editor[]
+  collections Collection[]
+}
+
+model Editor {
+  id                  Int               @id @default(autoincrement())
+  userId              Int               @unique
+  publishingCompanyId Int
+  user                User              @relation("UserToEditor", fields: [userId], references: [id], onDelete: Cascade)
+  publishingCompany   PublishingCompany @relation(fields: [publishingCompanyId], references: [id], onDelete: Cascade)
+  collections         Collection[]
+}
+
+model Administrator {
+  id     Int  @id @default(autoincrement())
+  userId Int  @unique
+  user   User @relation("UserToAdmin", fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model TraitType {
+  id     Int     @id @default(autoincrement())
+  label  String
+  traits Trait[]
+}
+
+model Trait {
+  id              Int              @id @default(autoincrement())
+  traitTypeId     Int
+  label           String
+  traitType       TraitType        @relation(fields: [traitTypeId], references: [id], onDelete: Cascade)
+  characterTraits CharacterTrait[]
+}
+
+model Character {
+  id              Int              @id @default(autoincrement())
+  name            String
+  playerId        Int
+  characterTraits CharacterTrait[]
+  player          Player[]
+}
+
+model CharacterTrait {
+  characterId Int
+  traitId     Int
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  trait       Trait     @relation(fields: [traitId], references: [id], onDelete: Cascade)
+
+  @@id([characterId, traitId])
+}
+
+model Player {
+  id              Int              @id @default(autoincrement())
+  userId          Int              @unique
+  characterId     Int?             @unique
+  birthdate       DateTime
+  user            User             @relation("UserToPlayer", fields: [userId], references: [id], onDelete: Cascade)
+  character       Character?       @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  playingSessions PlayingSession[]
+}
+
+model Collection {
+  id                  Int                @id @default(autoincrement())
+  editorId            Int
+  name                String
+  description         String
+  minimumAge          Int
+  editor              Editor             @relation(fields: [editorId], references: [id])
+  stories             Story[]
+  publishingCompany   PublishingCompany? @relation(fields: [publishingCompanyId], references: [id])
+  publishingCompanyId Int?
+}
+
+model Story {
+  id                  Int                 @id @default(autoincrement())
+  collectionId        Int?
+  name                String
+  description         String
+  collection          Collection?         @relation(fields: [collectionId], references: [id])
+  storyKeywords       StoryKeyword[]
+  storyPages          StoryPage[]
+  authorStoryAccesses AuthorStoryAccess[]
+  playingSessions     PlayingSession[]
+  accessLog           AccessLog[]
+}
+
+model Keyword {
+  id            Int            @id @default(autoincrement())
+  label         String
+  storyKeywords StoryKeyword[]
+}
+
+model StoryKeyword {
+  storyId   Int
+  keywordId Int
+  Story     Story   @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  keyword   Keyword @relation(fields: [keywordId], references: [id], onDelete: Cascade)
+
+  @@id([storyId, keywordId])
+}
+
+model StoryPage {
+  id      Int    @id @default(autoincrement())
+  storyId Int
+  name    String
+  story   Story  @relation(fields: [storyId], references: [id])
+}
+
+model AuthorStoryAccess {
+  authorId   Int
+  storyId    Int
+  isCreator  Boolean
+  author     Author      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  story      Story       @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  accessLogs AccessLog[]
+
+  @@id([authorId, storyId])
+}
+
+model PlayingSession {
+  id       Int    @id @default(autoincrement())
+  playerId Int
+  storyId  Int
+  story    Story  @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  player   Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+}
+
+model AccessType {
+  id         Int         @id @default(autoincrement())
+  label      String
+  accessLogs AccessLog[]
+}
+
+model LogType {
+  id         Int         @id @default(autoincrement())
+  label      String
+  accessLogs AccessLog[]
+}
+
+model AccessLog {
+  id           Int                @id @default(autoincrement())
+  accessTypeId Int
+  authorId     Int
+  storyId      Int
+  logTypeId    Int
+  accessedOn   DateTime
+  accessType   AccessType         @relation(fields: [accessTypeId], references: [id], onDelete: Cascade)
+  story        Story              @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  type         LogType            @relation(fields: [logTypeId], references: [id], onDelete: Cascade)
+  access       AuthorStoryAccess? @relation(fields: [storyId, authorId], references: [authorId, storyId], onDelete: Cascade)
+}

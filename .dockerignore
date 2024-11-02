@@ -1,0 +1,16 @@
+.next
+.git
+.env
+.env.example
+.env.test
+.git
+*Dockerfile*
+*docker-compose*
+node_modules
+coverage
+.husky
+.prettierignore
+.prettierrc
+update_db.dockerfile
+README.md
+prometheus.yml
