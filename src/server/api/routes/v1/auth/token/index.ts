@@ -6,7 +6,7 @@ import { logoutRoute } from "./logout";
 import { renewRoute } from "./renew";
 
 export const tokenRoute = new OpenAPIHono({
-	defaultHook: defaultHook,
+  defaultHook: defaultHook,
 })
-	.route("/", logoutRoute)
-	.route("/", renewRoute);
+  .route("/", logoutRoute)
+  .route("/", renewRoute);

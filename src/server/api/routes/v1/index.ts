@@ -5,5 +5,5 @@ import { defaultHook } from "@/server/api/middleware/zod-handle";
 import { authRoute } from "./auth";
 
 export const v1Route = new OpenAPIHono({
-	defaultHook: defaultHook,
+  defaultHook: defaultHook,
 }).route("/auth", authRoute);
